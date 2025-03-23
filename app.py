@@ -149,7 +149,9 @@ def finish_game():
     rounds = Round.query.filter_by(game_id=game_id).all()
     total_score = sum(r.points for r in rounds)
 
+    print(game_id)
     game = Game.query.get(game_id)
+    print(game)
     game.score = total_score
     db.session.commit()
 
