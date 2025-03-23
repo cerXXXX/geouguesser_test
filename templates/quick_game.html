@@ -7,7 +7,9 @@
 
         <!-- Левая панель: спутниковый снимок -->
         <div class="left-panel">
-            <img id="satelliteImage" alt="Спутниковый снимок" class="satellite-image full">
+            <img src="https://static-maps.yandex.ru/1.x/?ll={{ real_lng }},{{ real_lat }}&z=15&size=600,400&l=sat"
+                 alt="Спутниковый снимок"
+                 class="satellite-image full">
         </div>
 
         <!-- Правая панель: карта и кнопка -->
@@ -30,37 +32,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const imgElement = document.getElementById('satelliteImage');
-        const container = document.querySelector('.left-panel');
-
-        function updateSatelliteImage() {
-            const width = Math.floor(container.clientWidth);
-            const height = Math.floor(container.clientHeight);
-
-            const maxWidth = 650;   // ограничения Яндекс Карт
-            const maxHeight = 450;
-
-            const finalWidth = Math.min(width, maxWidth);
-            const finalHeight = Math.min(height, maxHeight);
-
-            const realLat = {{ real_lat }};
-            const realLng = {{ real_lng }};
-            const zoom = 15;
-
-            const imgSrc = `https://static-maps.yandex.ru/1.x/?ll=${realLng},${realLat}&z=${zoom}&size=${finalWidth},${finalHeight}&l=sat`;
-
-            imgElement.src = imgSrc;
-        }
-
-        // Загружаем изображение при первой загрузке страницы
-        updateSatelliteImage();
-
-        // (опционально) пересчитываем при изменении размера окна
-        window.addEventListener('resize', function() {
-            updateSatelliteImage();
-        });
-
-        // Leaflet map
         var map = L.map('map', {
             zoomControl: false,
             attributionControl: false

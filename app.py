@@ -5,6 +5,7 @@ from config import Config
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
 import datetime
+import requests
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -28,7 +29,6 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -124,8 +124,7 @@ def game():
 
         return redirect(url_for('round_result', round_id=round_entry.id))
 
-    real_lat = random.uniform(40, 60)  # Примерно Европа
-    real_lng = random.uniform(-10, 40)
+    real_lat, real_lng = generate_valid_coordinates()
     session['real_lat'] = real_lat
     session['real_lng'] = real_lng
 
@@ -161,6 +160,56 @@ def finish_game():
 def leaderboard():
     top_games = Game.query.order_by(Game.score.desc()).limit(10).all()
     return render_template('leaderboard.html', games=top_games)
+
+
+@app.route('/quick-game', methods=['GET', 'POST'])
+def quick_game():
+    if request.method == 'POST':
+        guess_lat = float(request.form['guess_lat'])
+        guess_lng = float(request.form['guess_lng'])
+        real_lat = session.get('real_lat')
+        real_lng = session.get('real_lng')
+
+        distance = calculate_distance(real_lat, real_lng, guess_lat, guess_lng)
+
+        return render_template('quick_result.html', real_lat=real_lat, real_lng=real_lng, guess_lat=guess_lat,
+                               guess_lng=guess_lng, distance=distance)
+
+    # Генерируем координаты случайным образом
+    real_lat, real_lng = generate_valid_coordinates()
+    session['real_lat'] = real_lat
+    session['real_lng'] = real_lng
+
+    return render_template('quick_game.html', real_lat=real_lat, real_lng=real_lng)
+
+
+def generate_valid_coordinates():
+    """
+    Генерация случайных координат на планете Земля.
+    Здесь можно добавить проверку на корректность снимка.
+    """
+    while True:
+        lat = random.uniform(-40, 60)  # избегаем полюсов
+        lng = random.uniform(-10, 40)
+
+        # Можем проверить координаты на доступность, если есть API
+        if validate_coordinates(lat, lng):
+            return lat, lng
+
+
+def validate_coordinates(lat, lng):
+    """
+    Проверка валидности координат (доступность спутникового снимка)
+    """
+    url = f"https://static-maps.yandex.ru/1.x/?ll={lng},{lat}&z=15&size=450,450&l=sat"
+    try:
+        response = requests.get(url, timeout=3)
+        if response.status_code == 200 and b'error' not in response.content:
+            return True
+        else:
+            return False
+    except requests.RequestException:
+        return False
 
 
 def calculate_distance(lat1, lng1, lat2, lng2):
